@@ -14,13 +14,13 @@ enum Role {
 }
 
 enum ProductType {
-  LED_STRIP // FITAS
-  POWER_SUPPLY // FONTES
-  LAMPS // LAMPADAS
-  LUMINAIRES // LUMINARIAS
-  GARDEN // JARDIM
+  LED_STRIP
+  POWER_SUPPLY 
+  LAMPS 
+  LUMINAIRES
+  GARDEN 
   S_TOUCH
-  SYSTEMS // SISTEMAS
+  SYSTEMS 
 }
 
 enum MeasurementType {
