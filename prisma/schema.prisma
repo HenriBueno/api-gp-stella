@@ -1,7 +1,7 @@
 generator client {
-  provider = "prisma-client"
-  output        = "./generated/prisma"
-  moduleFormat  = "cjs"
+  provider     = "prisma-client"
+  output       = "./generated/prisma"
+  moduleFormat = "cjs"
 }
 
 datasource db {
@@ -15,12 +15,12 @@ enum Role {
 
 enum ProductType {
   LED_STRIP
-  POWER_SUPPLY 
-  LAMPS 
+  POWER_SUPPLY
+  LAMPS
   LUMINAIRES
-  GARDEN 
+  GARDEN
   S_TOUCH
-  SYSTEMS 
+  SYSTEMS
 }
 
 enum MeasurementType {
@@ -45,7 +45,7 @@ model Product {
   name       String
   type       ProductType
   reference  String             @unique
-  parameters ProductParameter[] 
+  parameters ProductParameter[]
   projects   Project[]
   createdAt  DateTime           @default(now())
   updatedAt  DateTime           @updatedAt

@@ -1,8 +1,19 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  ConflictException,
+  BadRequestException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from '../user/dto/create-user.dto';
+import {
+  AuthResponse,
+  UserEntity,
+  UserTypes,
+  JwtPayload,
+} from '../types/user.types';
 
 @Injectable()
 export class AuthService {
@@ -11,16 +22,17 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async register(createUserDto: CreateUserDto) {
+  async register(createUserDto: CreateUserDto): Promise<AuthResponse> {
     const { email, password, name, role } = createUserDto;
 
+    if (!password) throw new BadRequestException('Senha é obrigatória');
+
     const userExists = await this.prisma.user.findUnique({ where: { email } });
-    if (userExists) {
-      throw new ConflictException('Email já cadastrado');
-    }
+    if (userExists) throw new ConflictException('Email já cadastrado');
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = await this.prisma.user.create({
+
+    const user: UserEntity = await this.prisma.user.create({
       data: {
         email,
         password: hashedPassword,
@@ -29,36 +41,48 @@ export class AuthService {
       },
     });
 
-
-    const payload = { sub: user.id, email: user.email, role: user.role };
+    const payload: JwtPayload = {
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+    };
     const access_token = this.jwtService.sign(payload);
-
 
     const { password: _, ...userSafe } = user;
 
-    return { access_token, user: userSafe };
+    return { access_token, user: userSafe as UserTypes };
   }
 
-  async login(createUserDto: CreateUserDto) {
-    const { email, password } = createUserDto;
+  async login(email: string, password: string): Promise<AuthResponse> {
+    if (!email || !password)
+      throw new BadRequestException('Email e senha obrigatórios');
 
-    const user = await this.prisma.user.findUnique({ where: { email } });
+    const user: UserEntity | null = await this.prisma.user.findUnique({
+      where: { email },
+    });
     if (!user || !(await bcrypt.compare(password, user.password))) {
       throw new UnauthorizedException('Credenciais inválidas');
     }
 
-    const payload = { sub: user.id, email: user.email, role: user.role };
+    const payload: JwtPayload = {
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+    };
     const access_token = this.jwtService.sign(payload);
 
     const { password: _, ...userSafe } = user;
 
-    return { access_token, user: userSafe };
+    return { access_token, user: userSafe as UserTypes };
   }
 
-  async validateUser(payload: any) {
-    const user = await this.prisma.user.findUnique({ where: { id: payload.sub } });
+  async validateUser(payload: JwtPayload): Promise<UserTypes | null> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: payload.sub },
+    });
     if (!user) return null;
+
     const { password, ...result } = user;
-    return result;
+    return result as UserTypes;
   }
 }
